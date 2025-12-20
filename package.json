@@ -1,0 +1,149 @@
+{
+  "name": "pos-system-pro",
+  "version": "2.0.4",
+  "description": "نظام نقاط البيع المتقدم - يعمل 100% بدون إنترنت",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "cross-env NODE_ENV=development electron .",
+    "build": "electron-builder",
+    "build-win": "electron-builder --win",
+    "build-win-portable": "electron-builder --win portable",
+    "build-all": "electron-builder -mwl",
+    "postinstall": "electron-builder install-app-deps",
+    "rebuild": "electron-rebuild -f -w better-sqlite3",
+    "clean": "rimraf dist"
+  },
+  "keywords": [
+    "pos",
+    "point-of-sale",
+    "invoice",
+    "printing",
+    "electron",
+    "sqlite",
+    "thermal-printer",
+    "installments",
+    "offline",
+    "أقساط",
+    "نقاط البيع"
+  ],
+  "author": {
+    "name": "شركة الإبداع الرقمي",
+    "email": "info@digital-creativity.iq",
+    "url": "https://digital-creativity.iq"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@electron/rebuild": "^4.0.1",
+    "cross-env": "^7.0.3",
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.2.0",
+    "electron-store": "^8.1.0",
+    "node-json-db": "^2.3.0",
+    "@fortawesome/fontawesome-free": "^6.5.0",
+    "xlsx": "^0.18.5",
+    "jspdf": "^2.5.1",
+    "jspdf-autotable": "^3.5.31",
+    "firebase": "^8.10.1"
+  },
+  "build": {
+    "appId": "com.digitalcreativity.pos.pro",
+    "productName": "نظام نقاط البيع المتقدم",
+    "copyright": "Copyright © 2025 شركة الإبداع الرقمي - معرض يعقوب",
+    "asar": true,
+    "asarUnpack": [
+      "**/*.node"
+    ],
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "splash.html",
+      "index.html",
+      "yaqoub_logo.png",
+      "firebase-config-fixed.js",
+      "enhanced-modals.css",
+      "reports-system.js",
+      "expenses-system.js",
+      "yaqoub-print-templates.js",
+      "data_sdk.js",
+      "element_sdk.js",
+      "_sdk/**/*",
+      "database/**/*",
+      "node_modules/**/*",
+      "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
+      "!**/node_modules/.bin",
+      "!**/node_modules/*/build",
+      "!**/node_modules/*/test"
+    ],
+    "extraResources": [
+      {
+        "from": "database",
+        "to": "database",
+        "filter": ["**/*"]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "ia32"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "requestedExecutionLevel": "requireAdministrator"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerHeaderIcon": "build/icon.ico",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "نظام نقاط البيع المتقدم",
+      "artifactName": "POS-System-Pro-Setup-${version}.${ext}",
+      "deleteAppDataOnUninstall": false,
+      "language": "1025",
+      "installerLanguages": [
+        "ar_SA",
+        "en_US"
+      ],
+      "license": "LICENSE.txt",
+      "warningsAsErrors": false,
+      "allowElevation": true,
+      "perMachine": true
+    },
+    "portable": {
+      "artifactName": "POS-System-Pro-Portable-${version}.${ext}"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "icon": "build/icon.png",
+      "category": "Office"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "build/icon.icns",
+      "category": "public.app-category.business"
+    }
+  }
+}
