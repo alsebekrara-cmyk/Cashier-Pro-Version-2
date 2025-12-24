@@ -1,274 +1,200 @@
+// ملاحظة هامة:
+// يجب تضمين هذا الملف (element_sdk.js) في مجلد البناء النهائي (build/output) عند توزيع التطبيق.
+// إذا كنت تستخدم سكريبت بناء (npm run build أو غيره)، تأكد من نسخ ملف _sdk/element_sdk.js إلى مجلد build أو output النهائي.
+// مثال (في package.json):
+//   "build": "... && copy _sdk\\element_sdk.js build\\_sdk\\element_sdk.js && ..."
+
 /**
- * Element SDK - نظام إدارة عناصر DOM
- * معرض يعقوب - شركة الإبداع الرقمي
+ * Element SDK - نظام إدارة إعدادات التطبيق
+ * يوفر تخزين دائم للإعدادات باستخدام localStorage
  */
 
-class ElementSDK {
-    /**
-     * اختيار عنصر واحد
-     */
-    $(selector) {
-        return document.querySelector(selector);
-    }
+(function() {
+    'use strict';
 
-    /**
-     * اختيار عناصر متعددة
-     */
-    $$(selector) {
-        return document.querySelectorAll(selector);
-    }
-
-    /**
-     * إنشاء عنصر
-     */
-    create(tag, attributes = {}, innerHTML = '') {
-        const element = document.createElement(tag);
-        
-        // إضافة الخصائص
-        Object.keys(attributes).forEach(key => {
-            if (key === 'class') {
-                element.className = attributes[key];
-            } else if (key === 'style') {
-                Object.assign(element.style, attributes[key]);
-            } else {
-                element.setAttribute(key, attributes[key]);
-            }
-        });
-        
-        // إضافة المحتوى
-        if (innerHTML) {
-            element.innerHTML = innerHTML;
+    const CONFIG_KEY = 'pos_system_config';
+    
+    class ElementSDK {
+        constructor() {
+            this.config = null;
+            this.defaultConfig = null;
+            this.onConfigChangeCallback = null;
         }
-        
-        return element;
-    }
 
-    /**
-     * إضافة مستمع حدث
-     */
-    on(selector, event, callback) {
-        const elements = typeof selector === 'string' 
-            ? this.$$(selector) 
-            : [selector];
-            
-        elements.forEach(el => {
-            if (el) {
-                el.addEventListener(event, callback);
+        /**
+         * تهيئة SDK
+         * @param {Object} options - {defaultConfig, onConfigChange}
+         * @returns {Promise<Object>} - {isOk: boolean, config: Object}
+         */
+        async init(options = {}) {
+            try {
+                this.defaultConfig = options.defaultConfig || {};
+                this.onConfigChangeCallback = options.onConfigChange;
+
+                // تحميل الإعدادات المحفوظة أو استخدام الافتراضية
+                const savedConfig = localStorage.getItem(CONFIG_KEY);
+                
+                if (savedConfig) {
+                    try {
+                        this.config = JSON.parse(savedConfig);
+                        console.log('✅ تم تحميل الإعدادات المحفوظة');
+                    } catch (error) {
+                        console.warn('⚠️ فشل تحليل الإعدادات المحفوظة، استخدام الافتراضية');
+                        this.config = { ...this.defaultConfig };
+                    }
+                } else {
+                    this.config = { ...this.defaultConfig };
+                    await this.saveConfig();
+                    console.log('✅ تم إنشاء إعدادات افتراضية');
+                }
+
+                // إشعار بالإعدادات الحالية
+                if (this.onConfigChangeCallback) {
+                    await this.onConfigChangeCallback(this.config);
+                }
+
+                return { isOk: true, config: this.config };
+            } catch (error) {
+                console.error('خطأ في تهيئة Element SDK:', error);
+                return { isOk: false, error: error.message };
             }
-        });
-    }
-
-    /**
-     * إزالة مستمع حدث
-     */
-    off(selector, event, callback) {
-        const elements = typeof selector === 'string' 
-            ? this.$$(selector) 
-            : [selector];
-            
-        elements.forEach(el => {
-            if (el) {
-                el.removeEventListener(event, callback);
-            }
-        });
-    }
-
-    /**
-     * إضافة class
-     */
-    addClass(selector, className) {
-        const elements = typeof selector === 'string' 
-            ? this.$$(selector) 
-            : [selector];
-            
-        elements.forEach(el => {
-            if (el) {
-                el.classList.add(className);
-            }
-        });
-    }
-
-    /**
-     * إزالة class
-     */
-    removeClass(selector, className) {
-        const elements = typeof selector === 'string' 
-            ? this.$$(selector) 
-            : [selector];
-            
-        elements.forEach(el => {
-            if (el) {
-                el.classList.remove(className);
-            }
-        });
-    }
-
-    /**
-     * toggle class
-     */
-    toggleClass(selector, className) {
-        const elements = typeof selector === 'string' 
-            ? this.$$(selector) 
-            : [selector];
-            
-        elements.forEach(el => {
-            if (el) {
-                el.classList.toggle(className);
-            }
-        });
-    }
-
-    /**
-     * إظهار عنصر
-     */
-    show(selector) {
-        const elements = typeof selector === 'string' 
-            ? this.$$(selector) 
-            : [selector];
-            
-        elements.forEach(el => {
-            if (el) {
-                el.style.display = 'block';
-            }
-        });
-    }
-
-    /**
-     * إخفاء عنصر
-     */
-    hide(selector) {
-        const elements = typeof selector === 'string' 
-            ? this.$$(selector) 
-            : [selector];
-            
-        elements.forEach(el => {
-            if (el) {
-                el.style.display = 'none';
-            }
-        });
-    }
-
-    /**
-     * toggle عنصر
-     */
-    toggle(selector) {
-        const elements = typeof selector === 'string' 
-            ? this.$$(selector) 
-            : [selector];
-            
-        elements.forEach(el => {
-            if (el) {
-                el.style.display = el.style.display === 'none' ? 'block' : 'none';
-            }
-        });
-    }
-
-    /**
-     * الحصول على قيمة
-     */
-    getValue(selector) {
-        const el = typeof selector === 'string' ? this.$(selector) : selector;
-        return el ? el.value : null;
-    }
-
-    /**
-     * تعيين قيمة
-     */
-    setValue(selector, value) {
-        const el = typeof selector === 'string' ? this.$(selector) : selector;
-        if (el) {
-            el.value = value;
         }
-    }
 
-    /**
-     * الحصول على نص
-     */
-    getText(selector) {
-        const el = typeof selector === 'string' ? this.$(selector) : selector;
-        return el ? el.textContent : null;
-    }
+        /**
+         * الحصول على الإعدادات الحالية
+         * @returns {Object} - الإعدادات
+         */
+        getConfig() {
+            return { ...this.config };
+        }
 
-    /**
-     * تعيين نص
-     */
-    setText(selector, text) {
-        const el = typeof selector === 'string' ? this.$(selector) : selector;
-        if (el) {
-            el.textContent = text;
+        /**
+         * تحديث الإعدادات
+         * @param {Object} updates - التحديثات الجزئية
+         * @returns {Promise<Object>} - {isOk: boolean, config: Object}
+         */
+        async updateConfig(updates) {
+            try {
+                if (!updates || typeof updates !== 'object') {
+                    throw new Error('التحديثات يجب أن تكون كائن');
+                }
+
+                // دمج التحديثات مع الإعدادات الحالية
+                this.config = { ...this.config, ...updates };
+                
+                // حفظ التغييرات
+                await this.saveConfig();
+
+                // إشعار بالتغييرات
+                if (this.onConfigChangeCallback) {
+                    await this.onConfigChangeCallback(this.config);
+                }
+
+                console.log('✅ تم تحديث الإعدادات');
+                
+                return { isOk: true, config: this.config };
+            } catch (error) {
+                console.error('خطأ في تحديث الإعدادات:', error);
+                return { isOk: false, error: error.message };
+            }
+        }
+
+        /**
+         * حفظ الإعدادات في localStorage
+         * @returns {Promise<boolean>} - نجاح العملية
+         */
+        async saveConfig() {
+            try {
+                localStorage.setItem(CONFIG_KEY, JSON.stringify(this.config));
+                return true;
+            } catch (error) {
+                console.error('خطأ في حفظ الإعدادات:', error);
+                return false;
+            }
+        }
+
+        /**
+         * إعادة تعيين الإعدادات للقيم الافتراضية
+         * @returns {Promise<Object>} - {isOk: boolean, config: Object}
+         */
+        async resetConfig() {
+            try {
+                this.config = { ...this.defaultConfig };
+                await this.saveConfig();
+
+                // إشعار بالتغييرات
+                if (this.onConfigChangeCallback) {
+                    await this.onConfigChangeCallback(this.config);
+                }
+
+                console.log('✅ تم إعادة تعيين الإعدادات');
+                
+                return { isOk: true, config: this.config };
+            } catch (error) {
+                console.error('خطأ في إعادة تعيين الإعدادات:', error);
+                return { isOk: false, error: error.message };
+            }
+        }
+
+        /**
+         * تصدير الإعدادات كـ JSON
+         * @returns {string} - الإعدادات بصيغة JSON
+         */
+        exportConfig() {
+            return JSON.stringify(this.config, null, 2);
+        }
+
+        /**
+         * استيراد إعدادات من JSON
+         * @param {string} jsonConfig - الإعدادات بصيغة JSON
+         * @returns {Promise<Object>} - {isOk: boolean, config: Object}
+         */
+        async importConfig(jsonConfig) {
+            try {
+                const config = JSON.parse(jsonConfig);
+                
+                if (!config || typeof config !== 'object') {
+                    throw new Error('الإعدادات يجب أن تكون كائن');
+                }
+
+                this.config = config;
+                await this.saveConfig();
+
+                // إشعار بالتغييرات
+                if (this.onConfigChangeCallback) {
+                    await this.onConfigChangeCallback(this.config);
+                }
+
+                console.log('✅ تم استيراد الإعدادات');
+                
+                return { isOk: true, config: this.config };
+            } catch (error) {
+                console.error('خطأ في استيراد الإعدادات:', error);
+                return { isOk: false, error: error.message };
+            }
+        }
+
+        /**
+         * حذف جميع الإعدادات المحفوظة
+         * @returns {Promise<Object>} - {isOk: boolean}
+         */
+        async clearConfig() {
+            try {
+                localStorage.removeItem(CONFIG_KEY);
+                this.config = { ...this.defaultConfig };
+                
+                console.log('✅ تم حذف الإعدادات المحفوظة');
+                
+                return { isOk: true };
+            } catch (error) {
+                console.error('خطأ في حذف الإعدادات:', error);
+                return { isOk: false, error: error.message };
+            }
         }
     }
 
-    /**
-     * الحصول على HTML
-     */
-    getHTML(selector) {
-        const el = typeof selector === 'string' ? this.$(selector) : selector;
-        return el ? el.innerHTML : null;
-    }
-
-    /**
-     * تعيين HTML
-     */
-    setHTML(selector, html) {
-        const el = typeof selector === 'string' ? this.$(selector) : selector;
-        if (el) {
-            el.innerHTML = html;
-        }
-    }
-
-    /**
-     * إزالة عنصر
-     */
-    remove(selector) {
-        const elements = typeof selector === 'string' 
-            ? this.$$(selector) 
-            : [selector];
-            
-        elements.forEach(el => {
-            if (el && el.parentNode) {
-                el.parentNode.removeChild(el);
-            }
-        });
-    }
-
-    /**
-     * إفراغ عنصر
-     */
-    empty(selector) {
-        const el = typeof selector === 'string' ? this.$(selector) : selector;
-        if (el) {
-            el.innerHTML = '';
-        }
-    }
-
-    /**
-     * append
-     */
-    append(selector, element) {
-        const parent = typeof selector === 'string' ? this.$(selector) : selector;
-        if (parent) {
-            parent.appendChild(element);
-        }
-    }
-
-    /**
-     * prepend
-     */
-    prepend(selector, element) {
-        const parent = typeof selector === 'string' ? this.$(selector) : selector;
-        if (parent && parent.firstChild) {
-            parent.insertBefore(element, parent.firstChild);
-        } else if (parent) {
-            parent.appendChild(element);
-        }
-    }
-}
-
-// إنشاء instance واحد
-const elementSdk = new ElementSDK();
-
-// تصدير
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = elementSdk;
-}
+    // إنشاء نسخة واحدة من SDK
+    window.elementSdk = new ElementSDK();
+    
+    console.log('✅ Element SDK تم تحميله بنجاح');
+})();

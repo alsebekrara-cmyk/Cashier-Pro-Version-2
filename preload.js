@@ -226,11 +226,21 @@ contextBridge.exposeInMainWorld('electronAPI', {
     },
 
     /**
-     * تكبير/استعادة النافذة
+     * تبديل تكبير/استعادة النافذة
      * @returns {void}
      */
-    windowMaximize: () => {
-        ipcRenderer.send('window-maximize');
+    windowToggleMaximize: () => {
+        ipcRenderer.send('window-toggle-maximize');
+    },
+
+    /**
+     * الاستماع لتغير حالة تكبير النافذة
+     * @param {Function} callback - true إذا كانت مكبرة، false إذا عادت للوضع الطبيعي
+     */
+    onWindowMaximized: (callback) => {
+        const listener = (event, isMaximized) => callback(isMaximized);
+        ipcRenderer.on('window-maximized', listener);
+        return () => ipcRenderer.removeListener('window-maximized', listener);
     },
 
     /**
@@ -351,7 +361,7 @@ contextBridge.exposeInMainWorld('productsDB', {
      */
     getAll: async () => {
         const result = await ipcRenderer.invoke('db-query', {
-            sql: 'SELECT * FROM products WHERE active = 1 ORDER BY name',
+            sql: 'SELECT * FROM products WHERE active = 1 ORDER BY id DESC',
             params: []
         });
         return result.success ? result.data : [];
